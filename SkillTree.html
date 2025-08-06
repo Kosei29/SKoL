@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Observer's Soul Tree</title>
+  <style>
+    body {
+      background: linear-gradient(135deg, #1e003e, #3a0d5d);
+      color: #f2eaff;
+      font-family: 'Segoe UI', sans-serif;
+      padding: 2rem;
+    }
+    h1 {
+      color: #d6b1ff;
+    }
+    .branch {
+      margin-left: 1rem;
+      padding: 0.3rem 0.6rem;
+      border-left: 2px solid #a678de;
+      position: relative;
+    }
+    .branch::before {
+      content: '';
+      width: 10px;
+      height: 10px;
+      background-color: #a678de;
+      border-radius: 50%;
+      position: absolute;
+      left: -6px;
+      top: 0.5rem;
+    }
+    .indent {
+      margin-left: 2rem;
+    }
+    .controls {
+      margin-top: 1rem;
+    }
+    button {
+      background-color: #7e4acb;
+      color: #fff;
+      border: none;
+      padding: 0.4rem 0.8rem;
+      margin: 0.3rem;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #a678de;
+    }
+    select, input[type="text"] {
+      padding: 0.3rem;
+      margin-right: 0.5rem;
+    }
+    .delete-btn {
+      background-color: #cc3366;
+      margin-left: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>🌌 Observer's Soul Tree</h1>
+  <div id="tree"></div>
+
+  <div class="controls">
+    <input type="text" id="branchName" placeholder="New branch name...">
+    <select id="branchType">
+      <option value="main">🌌 Main Concept</option>
+      <option value="sub">🌳 Subtopic</option>
+    </select>
+    <select id="parentBranch">
+      <option value="">None (Root)</option>
+    </select>
+    <button onclick="addBranch()">Add Branch</button>
+  </div>
+
+  <script>
+    let treeData = [];
+
+    function renderTree() {
+      const container = document.getElementById('tree');
+      container.innerHTML = '';
+      const parentDropdown = document.getElementById('parentBranch');
+      parentDropdown.innerHTML = '<option value="">None (Root)</option>';
+      function render(branches, parentId = '', indentLevel = 0) {
+        branches.forEach((branch, index) => {
+          const div = document.createElement('div');
+          div.className = 'branch';
+          if (branch.type === 'sub') div.classList.add('indent');
+          div.style.marginLeft = indentLevel * 20 + 'px';
+          div.innerHTML = `${branch.icon} ${branch.name} <button class="delete-btn" onclick="deleteBranch('${branch.id}')">✖</button>`;
+          container.appendChild(div);
+
+          parentDropdown.innerHTML += `<option value="${branch.id}">${branch.icon} ${branch.name}</option>`;
+          if (branch.children && branch.children.length > 0) {
+            render(branch.children, branch.id, indentLevel + 1);
+          }
+        });
+      }
+      render(treeData);
+    }
+
+    function addBranch() {
+      const name = document.getElementById('branchName').value.trim();
+      const type = document.getElementById('branchType').value;
+      const parentId = document.getElementById('parentBranch').value;
+      if (!name) return;
+
+      const icon = type === 'main' ? '🌌' : '🌳';
+      const newBranch = {
+        id: Math.random().toString(36).substr(2, 9),
+        name,
+        type,
+        icon,
+        children: []
+      };
+
+      if (!parentId) {
+        treeData.push(newBranch);
+      } else {
+        const parentBranch = findBranch(treeData, parentId);
+        if (parentBranch) {
+          parentBranch.children.push(newBranch);
+        }
+      }
+      document.getElementById('branchName').value = '';
+      renderTree();
+    }
+
+    function findBranch(branches, id) {
+      for (let branch of branches) {
+        if (branch.id === id) return branch;
+        const found = findBranch(branch.children, id);
+        if (found) return found;
+      }
+      return null;
+    }
+
+    function deleteBranch(id) {
+      if (confirm("Are you sure you want to delete this branch?")) {
+        treeData = deleteRecursive(treeData, id);
+        renderTree();
+      }
+    }
+
+    function deleteRecursive(branches, id) {
+      return branches.filter(branch => {
+        if (branch.id === id) return false;
+        branch.children = deleteRecursive(branch.children, id);
+        return true;
+      });
+    }
+
+    renderTree();
+  </script>
+</body>
+</html>
